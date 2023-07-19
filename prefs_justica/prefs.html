@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="">
+  <meta name="author" content="Fillipe Feitosa; <fillfeitosa@gmail.com>">
+  <title>Justplan</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+  <script src="https://unpkg.com/konva@8.3.0/konva.min.js"></script>
+  <script src="https://kit.fontawesome.com/095ff0c6c8.js" crossorigin="anonymous"></script>
+  <script>
+
+    function updateQuestion(id, profileId, token, value, meta) {
+      var myHeaders = new Headers();
+
+      myHeaders.append("Authorization", "Bearer " + token);
+      myHeaders.append("Accept", "application/json, text/plain, */*");
+      myHeaders.append("Content-Type", "application/json;charset=UTF-8");
+
+      var raw = JSON.stringify({
+        id: id,
+        value: value,
+        meta,
+      });
+
+      var requestOptions = {
+        method: "PUT",
+        headers: myHeaders,
+        body: raw,
+        redirect: "follow",
+      };
+
+      var API_BASE_URL = 'http://localhost:8000';
+
+      // missing profile ID
+      return fetch(
+        `${API_BASE_URL}/api/profiles/${profileId}/question/`,
+        requestOptions
+      );
+    }
+
+
+  </script>
+
+
+
+
+  <style>
+    .bd-placeholder-img {
+      font-size: 1.125rem;
+      text-anchor: middle;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      user-select: none;
+    }
+
+    @media (min-width: 768px) {
+      .bd-placeholder-img-lg {
+        font-size: 3.5rem;
+      }
+    }
+  </style>
+
+
+</head>
+
+<body>
+
+  <div class="col-lg-8 mx-auto p-3 py-md-5">
+
+    <main>
+
+      <div class="mb-5">
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" id="flexSwitchCheckDefault">
+          <label class="form-check-label" for="flexSwitchCheckChecked">Acredito que a localização do SIG é injusta e
+            desejo altera-la.</label>
+        </div>
+
+      </div>
+
+      <hr class="col-3 col-md-2 mb-5">
+
+
+    </main>
+    <div class="row g-5">
+
+      <div class="col-md-8">
+        <div id="container"></div>
+        <script>
+          function writeMessage(message) {
+            text.text(message);
+          }
+
+          class Points {
+            constructor(radius, x_center, y_center) {
+              this.RAD = radius
+              this.XC = x_center
+              this.YC = y_center
+            }
+            randPoint() {
+              let ang = Math.random() * 2 * Math.PI,
+                hyp = Math.sqrt(Math.random()) * this.RAD,
+                adj = Math.cos(ang) * hyp,
+                opp = Math.sin(ang) * hyp
+              return [this.XC + adj, this.YC + opp]
+            }
+            generatePoints(numberOfPoints) {
+              let points = [];
+              points.push(this.XC, this.YC);
+              for (let index = 1; index < numberOfPoints - 1; index++) {
+                points.push(this.randPoint());
+              }
+              return points;
+            }
+          };
+
+          function createCircles(listOfPoints, color) {
+            listOfPoints.forEach(element => {
+              var circle = new Konva.Circle({
+                x: element[0],
+                y: element[1],
+                radius: 4,
+                fill: color,
+                stroke: 'black',
+                strokeWidth: 2,
+              });
+              layer.add(circle);
+            });
+          }
+
+          function getDistance(pointA, pointB) {
+            let a = pointA[0] - pointB[0];
+            let b = pointA[1] - pointB[1];
+            let distance = Math.sqrt(a * a + b * b);
+            return distance;
+          }
+
+          function distance(p) {
+            return Math.sqrt(Math.pow(richCenter[0] - p[0], 2) + Math.pow(richCenter[1] - p[1], 2))
+          }
+
+          function getClosestPoint(pointsA, pointsB, pointsC, boxPoint) {
+
+
+            let color = '';
+            let closestDistances = [];
+            closestDistances.push(getDistance(closestRich, boxPoint));
+            closestDistances.push(getDistance(closestPoor, boxPoint));
+            closestDistances.push(getDistance(closestInt, boxPoint));
+            if (Math.min(closestDistances) == closestRich) {
+              color = '&#128994;';
+            }
+            if (Math.min(closestDistances) == closestPoor) {
+              color = '&#128308;';
+            }
+            if (Math.min(closestDistances) == closestInt) {
+              color = '&#128993;';
+            }
+            let result = { 'dist': Math.min(closestDistances), 'color': color };
+            return result;
+          }
+
+          var width = window.innerWidth;
+          var height = window.innerHeight;
+
+          var stage = new Konva.Stage({
+            container: 'container',
+            width: 500,
+            height: 500,
+          });
+
+          var layer = new Konva.Layer();
+
+          var text = new Konva.Text({
+            x: 10,
+            y: 10,
+            fontFamily: 'Calibri',
+            fontSize: 24,
+            text: '',
+            fill: 'black',
+          });
+
+          var box = new Konva.Rect({
+            x: 40,
+            y: 80,
+            offset: [50, 25],
+            width: 30,
+            height: 30,
+            fill: '#00D2FF',
+            stroke: 'black',
+            shadowOffsetX: 10,
+            shadowOffsetY: 15,
+            shadowBlur: 40,
+            opacity: 0.5,
+            strokeWidth: 4,
+            draggable: true,
+          });
+
+          var richCenter = [70, 50];
+          var intermediateCenter = [120, 250];
+          var poorCenter = [400, 90];
+
+          var poorPoints = new Points(50, poorCenter[0], poorCenter[1]).generatePoints(30);
+          createCircles(poorPoints, 'red');
+          var intermediatePoints = new Points(100, intermediateCenter[0], intermediateCenter[1]).generatePoints(60)
+          createCircles(intermediatePoints, 'yellow');
+          var richPoints = new Points(50, richCenter[0], richCenter[1]).generatePoints(10);
+          createCircles(richPoints, 'green');
+
+          // write out drag and drop events
+          box.on('dragstart', function () {
+            // writeMessage('dragstart');
+          });
+
+          box.on('dragend', function () {
+            // Table 1
+            let richDistance = getDistance([this._lastPos.x, this._lastPos.y], richCenter);
+            let intermediateDistance = getDistance([this._lastPos.x, this._lastPos.y], intermediateCenter);
+            let poorDistance = getDistance([this._lastPos.x, this._lastPos.y], poorCenter);
+            document.getElementById('richDistance').innerHTML = (richDistance * 10).toFixed(0) + ' m';
+            document.getElementById('intermediateDistance').innerHTML = (intermediateDistance * 10).toFixed(0) + ' m';
+            document.getElementById('poorDistance').innerHTML = (poorDistance * 10).toFixed(0) + ' m';
+
+            // Table 2
+            let closestRich = richPoints.reduce((a, b) => distance(a) < distance(b) ? a : b);
+            closestRich = getDistance(closestRich, [this._lastPos.x, this._lastPos.y]);
+            let closestPoor = intermediatePoints.reduce((a, b) => distance(a) < distance(b) ? a : b);
+            closestPoor = getDistance(closestPoor, [this._lastPos.x, this._lastPos.y]);
+            let closestInt = poorPoints.reduce((a, b) => distance(a) < distance(b) ? a : b);
+            closestInt = getDistance(closestInt, [this._lastPos.x, this._lastPos.y]);
+            // document.getElementById('minDistance').innerHTML = ((closestRich + closestPoor + closestInt) * 10 / 3).toFixed(0);
+
+            let farRich = richPoints.reduce((a, b) => distance(a) > distance(b) ? a : b);
+            farRich = getDistance(farRich, [this._lastPos.x, this._lastPos.y]);
+            let farPoor = intermediatePoints.reduce((a, b) => distance(a) > distance(b) ? a : b);
+            farPoor = getDistance(farPoor, [this._lastPos.x, this._lastPos.y]);
+            let farInt = poorPoints.reduce((a, b) => distance(a) > distance(b) ? a : b);
+            farInt = getDistance(farInt, [this._lastPos.x, this._lastPos.y]);
+            // document.getElementById('maxDistance').innerHTML = ((farInt + farPoor + farRich) * 10 / 3).toFixed(0);
+
+            let meanDistance = ((richDistance + intermediateDistance + poorDistance) * 10 / 3).toFixed(0);
+            document.getElementById('meanDistance').innerHTML = meanDistance;
+
+
+            ////
+
+            const queryString = window.location.search;
+            const urlParams = new URLSearchParams(queryString);
+
+            const questionId = urlParams.get('question');
+            const profileId = urlParams.get('profileId');
+            const token = urlParams.get('token');
+
+            try {
+              const response = { "position": { "x": this._lastPos.x, "y": -this._lastPos.y }, "meanDistance": meanDistance, "richDistance": richDistance * 10, "intermediateDistance": intermediateDistance * 10, "poorDistance": poorDistance * 10 };
+              console.log(response);
+              updateQuestion(questionId, profileId, token, response, { isValid: true }).then(() => {
+                parent.postMessage('questionChanged', '*');
+              })
+            } catch (e) {
+              console.log(e)
+            }
+
+            /// 
+
+          });
+
+          layer.add(text);
+          // layer.add(circle);
+          layer.add(box);
+
+          // add the layer to the stage
+          stage.add(layer);
+        </script>
+      </div>
+      <div class="col-md-4">
+        <h2>Métricas</h2>
+        <!-- Quantitativos: % da população em cada grupo -->
+        <!-- Distâncias Globais -->
+        <!-- Distâncias por grupo socioeconomico -->
+        <table class="table table-striped w-auto" id="exercise1">
+          <thead class="thead-dark">
+            <tr>
+              <th scope="col">Grupo</th>
+              <th scope="col">Cor</th>
+              <th scope="col">Distância(m)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">Desfavorecidos</th>
+              <td><span>&#128308;</span></td>
+              <td id="poorDistance"></td>
+            </tr>
+            <tr>
+              <th scope="row">Intermédios</th>
+              <td><span>&#128993;</span></td>
+              <td id="intermediateDistance"></td>
+            </tr>
+            <tr>
+              <th scope="row">Favorecido</th>
+              <td><span>&#128994;</span></td>
+              <td id="richDistance"></td>
+            </tr>
+          </tbody>
+        </table>
+        <table class="table table-striped ">
+          <thead class="thead-dark">
+            <tr>
+              <th scope="col">Distância Média</th>
+              <th scope="col">(m)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">Total</th>
+              <td id="meanDistance">à espera</td>
+            </tr>
+
+          </tbody>
+        </table>
+
+      </div>
+    </div>
+
+
+  </div>
+
+
+
+
+</body>
+
+</html>
