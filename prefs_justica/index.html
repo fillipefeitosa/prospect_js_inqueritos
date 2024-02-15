@@ -101,6 +101,7 @@
                 box.draggable(true)
               } else {
                 // do that
+                box.position(originalPosition); // Reset the Box position
                 box.draggable(false)
               }
               layer.draw();
@@ -237,6 +238,8 @@
               };
             }
           });
+
+          var originalPosition = { x: box.x(), y: box.y() }; // Store the Box original position
 
           var richCenter = [70, 50];
           var intermediateCenter = [120, 250];
