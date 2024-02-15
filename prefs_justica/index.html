@@ -184,6 +184,16 @@
             fill: 'black',
           });
 
+          var canvasBorder = new Konva.Rect({
+            x: 0,
+            y: 0,
+            width: stage.width(),
+            height: stage.height(),
+            stroke: 'black',
+            strokeWidth: 4,
+          });
+          layer.add(canvasBorder); // Needs to the the first layer to be added
+
           var box = new Konva.Rect({
             x: 40,
             y: 80,
@@ -198,14 +208,14 @@
             opacity: 0.5,
             strokeWidth: 4,
             draggable: true,
-            dragBoundFunc: function (post) {
-              var newX = post.x < 0 ? 0 : post.x;
-              var newY = post.y < 0 ? 0 : post.y;
-              newX = newX > 500 ? 500 : newX;
-              newY = newY > 400 ? 400 : newY;
+            dragBoundFunc: function (pos) {
+              var newX = pos.x < 0 ? 0 : pos.x; // Left margin
+              newX = newX > stage.width() - this.width() ? stage.width() - this.width() : newX; // Right margin
+              var newY = pos.y < 0 ? 0 : pos.y; // Top margin
+              newY = newY > stage.height() - this.height() ? stage.height() - this.height() : newY; // Bottom margin
               return {
                 x: newX,
-                y: newY,
+                y: newY
               };
             }
           });
