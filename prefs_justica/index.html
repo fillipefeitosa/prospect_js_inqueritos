@@ -42,7 +42,6 @@
       );
     }
 
-
   </script>
 
 
@@ -76,8 +75,9 @@
       <div class="mb-5">
         <div class="form-check form-switch">
           <input class="form-check-input" type="checkbox" id="flexSwitchCheckDefault">
-          <label class="form-check-label" for="flexSwitchCheckChecked">Acredito que a localização do SIG é injusta e
+          <label class="form-check-label" for="flexSwitchCheckDefault">Acredito que a localização do SIG é injusta e
             desejo altera-la.</label>
+
         </div>
 
       </div>
@@ -91,6 +91,24 @@
       <div class="col-md-8">
         <div id="container"></div>
         <script>
+
+          document.addEventListener('DOMContentLoaded', (event) => {
+            var checkbox = document.getElementById('flexSwitchCheckDefault'); // Get the checkbox by ID
+
+            checkbox.addEventListener('change', function () {
+              if (this.checked) {
+                // do this
+                box.draggable(true)
+              } else {
+                // do that
+                box.draggable(false)
+              }
+              layer.draw();
+            });
+            var isCheckboxChecked = checkbox.checked;
+            box.draggable(isCheckboxChecked);
+          });
+
           function writeMessage(message) {
             text.text(message);
           }
