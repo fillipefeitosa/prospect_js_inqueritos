@@ -170,7 +170,7 @@
           var stage = new Konva.Stage({
             container: 'container',
             width: 500,
-            height: 500,
+            height: 400,
           });
 
           var layer = new Konva.Layer();
@@ -198,6 +198,16 @@
             opacity: 0.5,
             strokeWidth: 4,
             draggable: true,
+            dragBoundFunc: function (post) {
+              var newX = post.x < 0 ? 0 : post.x;
+              var newY = post.y < 0 ? 0 : post.y;
+              newX = newX > 500 ? 500 : newX;
+              newY = newY > 400 ? 400 : newY;
+              return {
+                x: newX,
+                y: newY,
+              };
+            }
           });
 
           var richCenter = [70, 50];
