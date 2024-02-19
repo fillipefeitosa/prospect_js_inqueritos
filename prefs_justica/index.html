@@ -12,6 +12,55 @@
   <script src="https://unpkg.com/konva@8.3.0/konva.min.js"></script>
   <script src="https://kit.fontawesome.com/095ff0c6c8.js" crossorigin="anonymous"></script>
   <script>
+    function getDistance(pointA, pointB) {
+      let a = pointA[0] - pointB[0];
+      let b = pointA[1] - pointB[1];
+      let distance = Math.sqrt(a * a + b * b);
+      return distance;
+    }
+
+    function calculateDistances(boxPosition) {
+      posArray = [boxPosition.x, boxPosition.y];
+      let richDistance = Math.round(getDistance(posArray, richCenter));
+      let intermediateDistance = Math.round(getDistance(posArray, intermediateCenter));
+      let poorDistance = Math.round(getDistance(posArray, poorCenter));
+      let meanDistance = Math.round((richDistance + intermediateDistance + poorDistance) / 3);
+
+      return {
+        meanDistance: meanDistance * 10, // Assuming you want to scale the distance by 10 as before
+        richDistance: richDistance * 10,
+        intermediateDistance: intermediateDistance * 10,
+        poorDistance: poorDistance * 10
+      };
+    }
+
+    function sendPositionToServer(position, distances) {
+      // Assuming distances is an object containing richDistance, intermediateDistance, and poorDistance
+      const response = {
+        "position": position,
+        "meanDistance": distances.meanDistance,
+        "richDistance": distances.richDistance,
+        "intermediateDistance": distances.intermediateDistance,
+        "poorDistance": distances.poorDistance
+      };
+      console.log("Sending position and distances to server:", response);
+
+      // Extract necessary values from your URL or elsewhere as needed
+      const queryString = window.location.search;
+      const urlParams = new URLSearchParams(queryString);
+      const questionId = urlParams.get('question');
+      const profileId = urlParams.get('profileId');
+      const token = urlParams.get('token');
+
+      try {
+        updateQuestion(questionId, profileId, token, response, { isValid: true }).then(() => {
+          console.log("Data updated on server");
+          parent.postMessage('questionChanged', '*');
+        });
+      } catch (e) {
+        console.error("Error sending data to server:", e);
+      }
+    }
 
     function updateQuestion(id, profileId, token, value, meta) {
       var myHeaders = new Headers();
@@ -97,15 +146,25 @@
 
             checkbox.addEventListener('change', function () {
               if (this.checked) {
-                // do this
-                box.draggable(true)
+                box.draggable(true);
               } else {
-                // do that
-                box.position(originalPosition); // Reset the Box position
-                box.draggable(false)
+                box.position(originalPosition); // Reset the box position
+                box.draggable(false);
+                // Recalculate distances based on the original position
+                // let response = { originalPosition, reseted: true }
+                let distances = calculateDistances(originalPosition);
+                distances['reseted'] = true;
+                // Update distances on the UI
+                document.getElementById('richDistance').innerHTML = '250 m';
+                document.getElementById('intermediateDistance').innerHTML = '1800 m';
+                document.getElementById('poorDistance').innerHTML = '3505 m';
+                document.getElementById('meanDistance').innerHTML = '1900 m';
+                // Send the reset position and calculated distances to the server
+                sendPositionToServer(originalPosition, distances);
               }
               layer.draw();
             });
+
             var isCheckboxChecked = checkbox.checked;
             box.draggable(isCheckboxChecked);
           });
@@ -151,12 +210,7 @@
             });
           }
 
-          function getDistance(pointA, pointB) {
-            let a = pointA[0] - pointB[0];
-            let b = pointA[1] - pointB[1];
-            let distance = Math.sqrt(a * a + b * b);
-            return distance;
-          }
+
 
           function distance(p) {
             return Math.sqrt(Math.pow(richCenter[0] - p[0], 2) + Math.pow(richCenter[1] - p[1], 2))
@@ -258,53 +312,40 @@
           });
 
           box.on('dragend', function () {
-            // Table 1
-            let richDistance = getDistance([this._lastPos.x, this._lastPos.y], richCenter);
-            let intermediateDistance = getDistance([this._lastPos.x, this._lastPos.y], intermediateCenter);
-            let poorDistance = getDistance([this._lastPos.x, this._lastPos.y], poorCenter);
-            document.getElementById('richDistance').innerHTML = (richDistance * 10).toFixed(0) + ' m';
-            document.getElementById('intermediateDistance').innerHTML = (intermediateDistance * 10).toFixed(0) + ' m';
-            document.getElementById('poorDistance').innerHTML = (poorDistance * 10).toFixed(0) + ' m';
 
-            // Table 2
-            let closestRich = richPoints.reduce((a, b) => distance(a) < distance(b) ? a : b);
-            closestRich = getDistance(closestRich, [this._lastPos.x, this._lastPos.y]);
-            let closestPoor = intermediatePoints.reduce((a, b) => distance(a) < distance(b) ? a : b);
-            closestPoor = getDistance(closestPoor, [this._lastPos.x, this._lastPos.y]);
-            let closestInt = poorPoints.reduce((a, b) => distance(a) < distance(b) ? a : b);
-            closestInt = getDistance(closestInt, [this._lastPos.x, this._lastPos.y]);
-            // document.getElementById('minDistance').innerHTML = ((closestRich + closestPoor + closestInt) * 10 / 3).toFixed(0);
+            // Calculate the new position
+            let newPosition = { x: this._lastPos.x, y: this._lastPos.y };
+            // Calculate distances based on the new position
+            let distances = calculateDistances(newPosition);
 
-            let farRich = richPoints.reduce((a, b) => distance(a) > distance(b) ? a : b);
-            farRich = getDistance(farRich, [this._lastPos.x, this._lastPos.y]);
-            let farPoor = intermediatePoints.reduce((a, b) => distance(a) > distance(b) ? a : b);
-            farPoor = getDistance(farPoor, [this._lastPos.x, this._lastPos.y]);
-            let farInt = poorPoints.reduce((a, b) => distance(a) > distance(b) ? a : b);
-            farInt = getDistance(farInt, [this._lastPos.x, this._lastPos.y]);
-            // document.getElementById('maxDistance').innerHTML = ((farInt + farPoor + farRich) * 10 / 3).toFixed(0);
+            // Update UI with new distances
+            document.getElementById('richDistance').innerHTML = distances.richDistance.toFixed(0) + ' m';
+            document.getElementById('intermediateDistance').innerHTML = distances.intermediateDistance.toFixed(0) + ' m';
+            document.getElementById('poorDistance').innerHTML = distances.poorDistance.toFixed(0) + ' m';
+            document.getElementById('meanDistance').innerHTML = distances.meanDistance.toFixed(0) + ' m';
 
-            let meanDistance = ((richDistance + intermediateDistance + poorDistance) * 10 / 3).toFixed(0);
-            document.getElementById('meanDistance').innerHTML = meanDistance;
+            // Send the new position and distances to the server
+            sendPositionToServer(newPosition, distances);
 
 
             ////
 
-            const queryString = window.location.search;
-            const urlParams = new URLSearchParams(queryString);
+            // const queryString = window.location.search;
+            // const urlParams = new URLSearchParams(queryString);
 
-            const questionId = urlParams.get('question');
-            const profileId = urlParams.get('profileId');
-            const token = urlParams.get('token');
+            // const questionId = urlParams.get('question');
+            // const profileId = urlParams.get('profileId');
+            // const token = urlParams.get('token');
 
-            try {
-              const response = { "position": { "x": this._lastPos.x, "y": -this._lastPos.y }, "meanDistance": meanDistance, "richDistance": richDistance * 10, "intermediateDistance": intermediateDistance * 10, "poorDistance": poorDistance * 10 };
-              console.log(response);
-              updateQuestion(questionId, profileId, token, response, { isValid: true }).then(() => {
-                parent.postMessage('questionChanged', '*');
-              })
-            } catch (e) {
-              console.log(e)
-            }
+            // try {
+            //   const response = { "position": { "x": this._lastPos.x, "y": -this._lastPos.y }, "meanDistance": meanDistance, "richDistance": richDistance * 10, "intermediateDistance": intermediateDistance * 10, "poorDistance": poorDistance * 10 };
+            //   console.log(response);
+            //   updateQuestion(questionId, profileId, token, response, { isValid: true }).then(() => {
+            //     parent.postMessage('questionChanged', '*');
+            //   })
+            // } catch (e) {
+            //   console.log(e)
+            // }
 
             /// 
 
