@@ -123,7 +123,7 @@
 
       <div class="mb-5">
         <div class="form-check form-switch">
-          <input class="form-check-input" type="checkbox" id="flexSwitchCheckDefault">
+          <input class="form-check-input" type="checkbox" id="flexSwitchCheckDefault" checked="false">
           <label class="form-check-label" for="flexSwitchCheckDefault">Acredito que a localização do SIG é injusta e
             desejo altera-la.</label>
 
@@ -142,6 +142,8 @@
         <script>
 
           document.addEventListener('DOMContentLoaded', (event) => {
+            document.getElementById('flexSwitchCheckDefault').checked = false;
+            box.draggable(false);
             var checkbox = document.getElementById('flexSwitchCheckDefault'); // Get the checkbox by ID
 
             checkbox.addEventListener('change', function () {
@@ -364,7 +366,7 @@
         <!-- Quantitativos: % da população em cada grupo -->
         <!-- Distâncias Globais -->
         <!-- Distâncias por grupo socioeconomico -->
-        <table class="table table-striped w-auto" id="exercise1">
+        <table class="table table-striped w-100" id="exercise1">
           <thead class="thead-dark">
             <tr>
               <th scope="col">Grupo</th>
@@ -390,7 +392,7 @@
             </tr>
           </tbody>
         </table>
-        <table class="table table-striped ">
+        <table class="table table-striped w-100">
           <thead class="thead-dark">
             <tr>
               <th scope="col">Distância Média</th>
