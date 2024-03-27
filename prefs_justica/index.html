@@ -122,14 +122,20 @@
     <main>
 
       <div class="mb-5">
-        <div class="form-check form-switch">
-          <input class="form-check-input" type="checkbox" id="flexSwitchCheckDefault" checked="false">
-          <label class="form-check-label" for="flexSwitchCheckDefault">Acredito que a localização do SIG é injusta e
-            desejo altera-la.</label>
-
+        <div class="form-check">
+          <input class="form-check-input" type="radio" name="locationJustice" id="unjustLocation" value="unjust">
+          <label class="form-check-label" for="unjustLocation">
+            Acredito que a localização é injusta e desejo alterá-la.
+          </label>
         </div>
-
+        <div class="form-check">
+          <input class="form-check-input" type="radio" name="locationJustice" id="justLocation" value="just">
+          <label class="form-check-label" for="justLocation">
+            Acredito que a localização é justa do jeito que está.
+          </label>
+        </div>
       </div>
+
 
       <hr class="col-3 col-md-2 mb-5">
 
@@ -142,34 +148,33 @@
         <script>
 
           document.addEventListener('DOMContentLoaded', (event) => {
-            document.getElementById('flexSwitchCheckDefault').checked = false;
+            // Initially set draggable based on the checked radio button
             box.draggable(false);
-            var checkbox = document.getElementById('flexSwitchCheckDefault'); // Get the checkbox by ID
+            // box.draggable(document.getElementById('unjustLocation').checked);
 
-            checkbox.addEventListener('change', function () {
-              if (this.checked) {
-                box.draggable(true);
-              } else {
-                box.position(originalPosition); // Reset the box position
-                box.draggable(false);
-                // Recalculate distances based on the original position
-                // let response = { originalPosition, reseted: true }
-                let distances = calculateDistances(originalPosition);
-                distances['reseted'] = true;
-                // Update distances on the UI
-                document.getElementById('richDistance').innerHTML = '250 m';
-                document.getElementById('intermediateDistance').innerHTML = '1800 m';
-                document.getElementById('poorDistance').innerHTML = '3505 m';
-                document.getElementById('meanDistance').innerHTML = '1900 m';
-                // Send the reset position and calculated distances to the server
-                sendPositionToServer(originalPosition, distances);
-              }
-              layer.draw();
+            // Listen for changes on radio buttons
+            document.querySelectorAll('input[name="locationJustice"]').forEach((radio) => {
+              radio.addEventListener('change', function () {
+                if (document.getElementById('unjustLocation').checked) {
+                  box.draggable(true);
+                } else {
+                  box.position(originalPosition); // Reset the box position
+                  box.draggable(false);
+                  // Recalculate distances based on the original position
+                  let distances = calculateDistances(originalPosition);
+                  // Update distances on the UI
+                  document.getElementById('richDistance').innerHTML = '250 m';
+                  document.getElementById('intermediateDistance').innerHTML = '1800 m';
+                  document.getElementById('poorDistance').innerHTML = '3505 m';
+                  document.getElementById('meanDistance').innerHTML = '1900 m';
+                  distances['reseted'] = true;
+                  // Update distances on the UI and server as needed...
+                }
+                layer.draw();
+              });
             });
-
-            var isCheckboxChecked = checkbox.checked;
-            box.draggable(isCheckboxChecked);
           });
+
 
           function writeMessage(message) {
             text.text(message);
