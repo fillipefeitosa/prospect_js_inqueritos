@@ -88,7 +88,14 @@
       return fetch(
         `${API_BASE_URL}/api/profiles/${profileId}/question/`,
         requestOptions
-      );
+      ).then(response => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        console.log("Data updated on server");
+        parent.postMessage('questionChanged', '*');
+      })
+        .catch(error => console.error('Error:', error));
     }
 
   </script>
@@ -117,7 +124,7 @@
 
 <body>
 
-  <div class="col-lg-8 mx-auto p-3 py-md-5">
+  <div class="container-fluid py-md-5">
 
     <main>
 
@@ -125,13 +132,13 @@
         <div class="form-check">
           <input class="form-check-input" type="radio" name="locationJustice" id="unjustLocation" value="unjust">
           <label class="form-check-label" for="unjustLocation">
-            Acredito que a localização é injusta e desejo alterá-la.
+            Acredito que a localização é <b>injusta</b> e desejo alterá-la.
           </label>
         </div>
         <div class="form-check">
           <input class="form-check-input" type="radio" name="locationJustice" id="justLocation" value="just">
           <label class="form-check-label" for="justLocation">
-            Acredito que a localização é justa do jeito que está.
+            Acredito que a localização é <b>justa</b> do jeito que está.
           </label>
         </div>
       </div>
@@ -168,7 +175,10 @@
                   document.getElementById('poorDistance').innerHTML = '3505 m';
                   document.getElementById('meanDistance').innerHTML = '1900 m';
                   distances['reseted'] = true;
-                  // Update distances on the UI and server as needed...
+
+                  // send position to server after reseted
+                  sendPositionToServer(originalPosition, distances)
+
                 }
                 layer.draw();
               });
